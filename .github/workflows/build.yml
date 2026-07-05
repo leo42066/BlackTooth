@@ -1,0 +1,126 @@
+name: Build BlackTooth VST3 Plugin
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    name: Build Windows (VST3)
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Clone JUCE
+      run: |
+        git clone https://github.com/juce-framework/JUCE.git
+    
+    - name: Setup CMake
+      uses: cmake-actions/cmake-action@v2
+      with:
+        cmake-version: '3.21.x'
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022" -A x64 ..
+    
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+    
+    - name: Upload VST3 Plugin (Windows)
+      uses: actions/upload-artifact@v3
+      with:
+        name: BlackTooth-Windows-VST3
+        path: build/BlackTooth_artefacts/Release/VST3/BlackTooth.vst3
+        retention-days: 30
+
+  build-macos:
+    runs-on: macos-latest
+    name: Build macOS (VST3)
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Clone JUCE
+      run: |
+        git clone https://github.com/juce-framework/JUCE.git
+    
+    - name: Install dependencies
+      run: |
+        brew install cmake
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -G "Xcode" ..
+    
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+    
+    - name: Code Sign Plugin
+      run: |
+        codesign --force --deep --sign - build/BlackTooth_artefacts/Release/VST3/BlackTooth.vst3
+    
+    - name: Upload VST3 Plugin (macOS)
+      uses: actions/upload-artifact@v3
+      with:
+        name: BlackTooth-macOS-VST3
+        path: build/BlackTooth_artefacts/Release/VST3/BlackTooth.vst3
+        retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    name: Build Linux (VST3)
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Clone JUCE
+      run: |
+        git clone https://github.com/juce-framework/JUCE.git
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ git \
+          libx11-dev libxrandr-dev libxcursor-dev libxinerama-dev libxi-dev \
+          libxext-dev libxcomposite-dev libfreetype6-dev libasound2-dev \
+          libjack-dev libgl1-mesa-dev libwebkit2gtk-4.0-dev
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ..
+    
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release -j$(nproc)
+    
+    - name: Upload VST3 Plugin (Linux)
+      uses: actions/upload-artifact@v3
+      with:
+        name: BlackTooth-Linux-VST3
+        path: build/BlackTooth_artefacts/Release/VST3/BlackTooth.vst3
+        retention-days: 30
