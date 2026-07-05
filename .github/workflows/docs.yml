@@ -1,0 +1,27 @@
+name: Build Documentation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    name: Build & Deploy Docs
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Archive Documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: BlackTooth-Documentation
+        path: |
+          README.md
+          BUILD.md
+          ARCHITECTURE.md
+          QUICKSTART.md
+        retention-days: 30
